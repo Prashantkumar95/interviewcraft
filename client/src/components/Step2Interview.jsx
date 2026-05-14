@@ -454,110 +454,170 @@
 
 // export default Step2Interview
 
-// fixed code
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import maleVideo from "../assets/videos/male-ai.mp4";
 import femaleVideo from "../assets/videos/female-ai.mp4";
 import Timer from "./Timer";
 import { motion } from "motion/react";
-import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
+import {
+  FaMicrophone,
+  FaMicrophoneSlash,
+} from "react-icons/fa";
 import axios from "axios";
 import { ServerUrl } from "../App";
 import { BsArrowRight } from "react-icons/bs";
 
-function Step2Interview({ interviewData, onFinish }) {
-  const { interviewId, questions, userName } = interviewData;
+function Step2Interview({
+  interviewData,
+  onFinish,
+}) {
+  const {
+    interviewId,
+    questions,
+    userName,
+  } = interviewData;
 
-  const [isIntroPhase, setIsIntroPhase] = useState(true);
-  const [isMicOn, setIsMicOn] = useState(true);
-  const [isListening, setIsListening] = useState(false);
-  const [isAIPlaying, setIsAIPlaying] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answer, setAnswer] = useState("");
-  const [feedback, setFeedback] = useState("");
-  const [timeLeft, setTimeLeft] = useState(
-    questions[0]?.timeLimit || 60
-  );
-  const [selectedVoice, setSelectedVoice] = useState(null);
-  const [voiceGender, setVoiceGender] = useState("female");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [subtitle, setSubtitle] = useState("");
+  const [isIntroPhase, setIsIntroPhase] =
+    useState(true);
+
+  const [isMicOn, setIsMicOn] =
+    useState(true);
+
+  const [isListening, setIsListening] =
+    useState(false);
+
+  const [isAIPlaying, setIsAIPlaying] =
+    useState(false);
+
+  const [currentIndex, setCurrentIndex] =
+    useState(0);
+
+  const [answer, setAnswer] =
+    useState("");
+
+  const [feedback, setFeedback] =
+    useState("");
+
+  const [timeLeft, setTimeLeft] =
+    useState(
+      questions[0]?.timeLimit || 60
+    );
+
+  const [selectedVoice, setSelectedVoice] =
+    useState(null);
+
+  const [voiceGender, setVoiceGender] =
+    useState("female");
+
+  const [isSubmitting, setIsSubmitting] =
+    useState(false);
+
+  const [subtitle, setSubtitle] =
+    useState("");
 
   const recognitionRef = useRef(null);
   const videoRef = useRef(null);
 
-  const currentQuestion = questions[currentIndex];
+  const currentQuestion =
+    questions[currentIndex];
 
   /* ---------------- LOAD VOICES ---------------- */
+
   useEffect(() => {
     const loadVoices = () => {
-      const voices = window.speechSynthesis.getVoices();
+      const voices =
+        window.speechSynthesis.getVoices();
+
       if (!voices.length) return;
 
-      const femaleVoice =
+      const female =
         voices.find(
           (v) =>
-            v.name.toLowerCase().includes("zira") ||
-            v.name.toLowerCase().includes("samantha")
+            v.name
+              .toLowerCase()
+              .includes("zira") ||
+            v.name
+              .toLowerCase()
+              .includes("samantha")
         ) || voices[0];
 
-      setSelectedVoice(femaleVoice);
+      setSelectedVoice(female);
       setVoiceGender("female");
     };
 
     loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-
-    return () => {
-      window.speechSynthesis.onvoiceschanged = null;
-    };
+    window.speechSynthesis.onvoiceschanged =
+      loadVoices;
   }, []);
 
   const videoSource =
-    voiceGender === "male" ? maleVideo : femaleVideo;
+    voiceGender === "male"
+      ? maleVideo
+      : femaleVideo;
 
-  /* ---------------- MIC FUNCTIONS ---------------- */
+  /* ---------------- MIC ---------------- */
+
   const startMic = useCallback(() => {
-    if (!recognitionRef.current || isListening) return;
+    if (!recognitionRef.current)
+      return;
 
     try {
       recognitionRef.current.start();
-    } catch (err) {
-      console.log("Mic Start Error:", err);
-    }
-  }, [isListening]);
+    } catch {}
+  }, []);
 
   const stopMic = useCallback(() => {
-    if (!recognitionRef.current) return;
+    if (!recognitionRef.current)
+      return;
 
     try {
       recognitionRef.current.stop();
-    } catch (err) {
-      console.log("Mic Stop Error:", err);
-    }
+    } catch {}
   }, []);
 
-  /* ---------------- SPEAK FUNCTION ---------------- */
+  /* ---------------- SPEAK ---------------- */
+
   const speakText = useCallback(
     (text) => {
       return new Promise((resolve) => {
-        if (!window.speechSynthesis || !selectedVoice) {
+        if (
+          !window.speechSynthesis ||
+          !selectedVoice
+        ) {
           resolve();
           return;
         }
 
         window.speechSynthesis.cancel();
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.voice = selectedVoice;
+        const utterance =
+          new SpeechSynthesisUtterance(
+            text
+          );
+
+        utterance.voice =
+          selectedVoice;
+
         utterance.rate = 0.95;
-        utterance.pitch = 1;
+        utterance.pitch = 1.05;
 
         utterance.onstart = () => {
           setIsAIPlaying(true);
+
           stopMic();
-          videoRef.current?.play();
+
+          if (videoRef.current)
+            videoRef.current.play();
+
+          setSubtitle(text);
         };
 
         utterance.onend = () => {
@@ -565,55 +625,79 @@ function Step2Interview({ interviewData, onFinish }) {
 
           if (videoRef.current) {
             videoRef.current.pause();
-            videoRef.current.currentTime = 0;
+            videoRef.current.currentTime =
+              0;
           }
 
           setTimeout(() => {
-            if (isMicOn) startMic();
-          }, 300);
+            if (isMicOn)
+              startMic();
+          }, 400);
 
           setSubtitle("");
+
           resolve();
         };
 
-        setSubtitle(text);
-        window.speechSynthesis.speak(utterance);
+        window.speechSynthesis.speak(
+          utterance
+        );
       });
     },
-    [selectedVoice, isMicOn, startMic, stopMic]
+    [
+      selectedVoice,
+      stopMic,
+      startMic,
+      isMicOn,
+    ]
   );
 
   /* ---------------- INTERVIEW FLOW ---------------- */
+
   useEffect(() => {
     if (!selectedVoice) return;
 
-    const runInterview = async () => {
-      if (isIntroPhase) {
-        await speakText(
-          `Hi ${userName}, it's great to meet you today.`
-        );
-        await speakText(
-          "I'll ask a few questions. Answer naturally."
-        );
-        setIsIntroPhase(false);
-      } else if (currentQuestion) {
-        await speakText(currentQuestion.question);
-      }
-    };
+    const run =
+      async () => {
+        if (isIntroPhase) {
+          await speakText(
+            `Hi ${userName}, welcome to your interview.`
+          );
 
-    runInterview();
+          await speakText(
+            "Answer naturally and confidently."
+          );
+
+          setIsIntroPhase(false);
+        } else if (
+          currentQuestion
+        ) {
+          await speakText(
+            currentQuestion.question
+          );
+        }
+      };
+
+    run();
   }, [
     selectedVoice,
     isIntroPhase,
     currentIndex,
-    currentQuestion,
-    speakText,
-    userName,
   ]);
 
   /* ---------------- TIMER ---------------- */
+
   useEffect(() => {
-    if (isIntroPhase || !currentQuestion) return;
+    if (
+      isIntroPhase ||
+      !currentQuestion
+    )
+      return;
+
+    setTimeLeft(
+      currentQuestion.timeLimit ||
+        60
+    );
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -621,76 +705,98 @@ function Step2Interview({ interviewData, onFinish }) {
           clearInterval(timer);
           return 0;
         }
+
         return prev - 1;
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [isIntroPhase, currentQuestion]);
-
-  useEffect(() => {
-    if (!isIntroPhase && currentQuestion) {
-      setTimeLeft(currentQuestion.timeLimit || 60);
-      setAnswer("");
-    }
-  }, [currentIndex, currentQuestion, isIntroPhase]);
+    return () =>
+      clearInterval(timer);
+  }, [
+    currentIndex,
+    isIntroPhase,
+  ]);
 
   /* ---------------- SPEECH RECOGNITION ---------------- */
+
   useEffect(() => {
-    if (!("webkitSpeechRecognition" in window)) {
-      console.log("Speech recognition not supported");
+    if (
+      !(
+        "webkitSpeechRecognition" in
+        window
+      )
+    )
       return;
-    }
 
-    const recognition = new window.webkitSpeechRecognition();
+    const recognition =
+      new window.webkitSpeechRecognition();
 
-    recognition.lang = "en-US";
-    recognition.continuous = true;
-    recognition.interimResults = true;
+    recognition.lang =
+      "en-US";
 
-    recognition.onstart = () => {
-      console.log("Mic started");
+    recognition.continuous =
+      true;
+
+    recognition.interimResults =
+      true;
+
+    recognition.onstart = () =>
       setIsListening(true);
-    };
 
-    recognition.onend = () => {
-      console.log("Mic ended");
+    recognition.onend = () =>
       setIsListening(false);
-    };
 
-    recognition.onerror = (event) => {
-      console.log("Speech Error:", event.error);
-
-      if (event.error === "not-allowed") {
+    recognition.onerror = (
+      event
+    ) => {
+      if (
+        event.error ===
+        "not-allowed"
+      ) {
         setIsMicOn(false);
       }
     };
 
-    recognition.onresult = (event) => {
-      let finalTranscript = "";
-      let interimTranscript = "";
+    recognition.onresult = (
+      event
+    ) => {
+      let finalTranscript =
+        "";
+
+      let interimTranscript =
+        "";
 
       for (
-        let i = event.resultIndex;
-        i < event.results.length;
+        let i =
+          event.resultIndex;
+        i <
+        event.results.length;
         i++
       ) {
         const transcript =
-          event.results[i][0].transcript;
+          event.results[i][0]
+            .transcript;
 
-        if (event.results[i].isFinal) {
-          finalTranscript += transcript + " ";
+        if (
+          event.results[i]
+            .isFinal
+        ) {
+          finalTranscript +=
+            transcript;
         } else {
-          interimTranscript += transcript;
+          interimTranscript +=
+            transcript;
         }
       }
 
       setAnswer(
-        finalTranscript + interimTranscript
+        finalTranscript +
+          interimTranscript
       );
     };
 
-    recognitionRef.current = recognition;
+    recognitionRef.current =
+      recognition;
 
     return () => {
       recognition.stop();
@@ -699,88 +805,107 @@ function Step2Interview({ interviewData, onFinish }) {
   }, []);
 
   /* ---------------- TOGGLE MIC ---------------- */
+
   const toggleMic = () => {
-    if (isMicOn) {
+    setIsMicOn((prev) => {
+      if (prev) stopMic();
+      else startMic();
+
+      return !prev;
+    });
+  };
+
+  /* ---------------- SUBMIT ---------------- */
+
+  const submitAnswer =
+    async () => {
+      if (isSubmitting)
+        return;
+
       stopMic();
-    } else {
-      startMic();
-    }
 
-    setIsMicOn(!isMicOn);
-  };
+      setIsSubmitting(true);
 
-  /* ---------------- SUBMIT ANSWER ---------------- */
-  const submitAnswer = async () => {
-    if (isSubmitting) return;
+      try {
+        const result =
+          await axios.post(
+            ServerUrl +
+              "/api/interview/submit-answer",
+            {
+              interviewId,
+              questionIndex:
+                currentIndex,
+              answer,
+              timeTaken:
+                currentQuestion.timeLimit -
+                timeLeft,
+            },
+            {
+              withCredentials:
+                true,
+            }
+          );
 
-    stopMic();
-    setIsSubmitting(true);
+        setFeedback(
+          result.data.feedback
+        );
 
-    try {
-      const result = await axios.post(
-        ServerUrl + "/api/interview/submit-answer",
-        {
-          interviewId,
-          questionIndex: currentIndex,
-          answer,
-          timeTaken:
-            currentQuestion.timeLimit - timeLeft,
-        },
-        { withCredentials: true }
+        await speakText(
+          result.data.feedback
+        );
+      } catch (error) {
+        console.log(error);
+      }
+
+      setIsSubmitting(false);
+    };
+
+  /* ---------------- NEXT ---------------- */
+
+  const handleNext =
+    async () => {
+      setAnswer("");
+      setFeedback("");
+
+      if (
+        currentIndex + 1 >=
+        questions.length
+      ) {
+        finishInterview();
+        return;
+      }
+
+      setCurrentIndex(
+        (prev) => prev + 1
       );
-
-      setFeedback(result.data.feedback);
-
-      await speakText(result.data.feedback);
-
-      setIsSubmitting(false);
-    } catch (error) {
-      console.log(error);
-      setIsSubmitting(false);
-    }
-  };
-
-  /* ---------------- NEXT QUESTION ---------------- */
-  const handleNext = async () => {
-    setFeedback("");
-
-    if (currentIndex + 1 >= questions.length) {
-      finishInterview();
-      return;
-    }
-
-    await speakText(
-      "Alright, let's move to the next question."
-    );
-
-    setCurrentIndex((prev) => prev + 1);
-  };
+    };
 
   /* ---------------- FINISH ---------------- */
-  const finishInterview = async () => {
-    stopMic();
-    setIsMicOn(false);
 
-    try {
-      const result = await axios.post(
-        ServerUrl + "/api/interview/finish",
-        { interviewId },
-        { withCredentials: true }
-      );
+  const finishInterview =
+    async () => {
+      stopMic();
+
+      const result =
+        await axios.post(
+          ServerUrl +
+            "/api/interview/finish",
+          { interviewId },
+          {
+            withCredentials:
+              true,
+          }
+        );
 
       onFinish(result.data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+    };
 
   /* ---------------- AUTO SUBMIT ---------------- */
+
   useEffect(() => {
     if (
       timeLeft === 0 &&
-      !isSubmitting &&
-      !feedback &&
-      !isIntroPhase
+      !feedback
     ) {
       submitAnswer();
     }
@@ -788,52 +913,68 @@ function Step2Interview({ interviewData, onFinish }) {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-350 min-h-[80vh] bg-white rounded-3xl shadow-2xl border flex flex-col lg:flex-row overflow-hidden">
 
-        <div className="w-full lg:w-[35%] p-6 border-r">
+      <div className="w-full max-w-7xl bg-white rounded-3xl shadow-2xl flex overflow-hidden">
+
+        {/* LEFT */}
+
+        <div className="w-1/3 p-6 border-r">
+
           <video
             src={videoSource}
             ref={videoRef}
             muted
-            playsInline
-            className="w-full rounded-2xl"
+            className="rounded-2xl"
           />
 
           {subtitle && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-xl">
+            <p className="mt-4 text-center">
               {subtitle}
-            </div>
+            </p>
           )}
 
-          <div className="mt-6">
-            <Timer
-              timeLeft={timeLeft}
-              totalTime={
-                currentQuestion?.timeLimit
-              }
-            />
-          </div>
+          <Timer
+            timeLeft={timeLeft}
+            totalTime={
+              currentQuestion?.timeLimit
+            }
+          />
         </div>
 
-        <div className="flex-1 p-6 flex flex-col">
+        {/* RIGHT */}
+
+        <div className="flex-1 p-8">
+
+          <h2 className="text-2xl font-bold text-emerald-600 mb-6">
+            AI Smart Interview
+          </h2>
+
           {!isIntroPhase && (
-            <div className="mb-4 font-semibold">
-              {currentQuestion?.question}
+            <div className="mb-6">
+              {
+                currentQuestion?.question
+              }
             </div>
           )}
 
           <textarea
             value={answer}
             onChange={(e) =>
-              setAnswer(e.target.value)
+              setAnswer(
+                e.target.value
+              )
             }
-            className="flex-1 border rounded-xl p-4"
-            placeholder="Type or speak..."
+            className="w-full h-72 p-4 border rounded-xl"
           />
 
           {!feedback ? (
-            <div className="flex gap-4 mt-4">
-              <button onClick={toggleMic}>
+            <div className="flex gap-4 mt-6">
+
+              <button
+                onClick={
+                  toggleMic
+                }
+              >
                 {isMicOn ? (
                   <FaMicrophone />
                 ) : (
@@ -842,21 +983,26 @@ function Step2Interview({ interviewData, onFinish }) {
               </button>
 
               <button
-                onClick={submitAnswer}
+                onClick={
+                  submitAnswer
+                }
               >
-                {isSubmitting
-                  ? "Submitting..."
-                  : "Submit"}
+                Submit
               </button>
             </div>
           ) : (
-            <div className="mt-4">
-              <p>{feedback}</p>
+            <div className="mt-6">
+
+              <p>
+                {feedback}
+              </p>
 
               <button
-                onClick={handleNext}
+                onClick={
+                  handleNext
+                }
               >
-                Next
+                Next{" "}
                 <BsArrowRight />
               </button>
             </div>
