@@ -160,11 +160,7 @@ Question 2 → easy
 Question 3 → medium  
 Question 4 → medium  
 Question 5 → hard  
-Question 6 → hard  
-Question 7 → hard  
-Question 8 → hard  
-Question 9 → hard  
-Question 10 → hard  
+
 
 Make questions based on the candidate’s role, experience,interviewMode, projects, skills, and resume details.
 `
@@ -212,7 +208,7 @@ Make questions based on the candidate’s role, experience,interviewMode, projec
       questions: questionsArray.map((q, index) => ({
         question: q,
         difficulty: ["easy", "easy", "medium", "medium", "hard"][index],
-        timeLimit: [60, 60, 90, 90, 120,120,120,120,120,120][index],
+        timeLimit: [60, 60, 90, 90, 120][index],
       }))
     })
 
